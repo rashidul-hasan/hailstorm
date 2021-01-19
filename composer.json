@@ -1,0 +1,33 @@
+{
+    "name": "rashidul/hailstorm",
+    "description": "Yet another Laravel CRUD generator",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Rashidul Hasan",
+            "email": "rashidul69@gmail.com"
+        }
+    ],
+    "require": {
+        "yajra/laravel-datatables-fractal": "^1.0",
+        "yajra/laravel-datatables-oracle": "^8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Rashidul\\Hailstorm\\": "src/"
+        }
+    },
+    "suggest": {
+        "nwidart/laravel-modules": "Module Management In Laravel"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Rashidul\\Hailstorm\\HailstormServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability":"dev"
+
+}
