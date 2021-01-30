@@ -3,6 +3,7 @@
 namespace Rashidul\Hailstorm\Generator\Command;
 
 use Illuminate\Console\GeneratorCommand;
+use Illuminate\Support\Str;
 use Rashidul\Hailstorm\Generator\Helper;
 
 class MakeModelCommand extends GeneratorCommand
@@ -12,7 +13,7 @@ class MakeModelCommand extends GeneratorCommand
      *
      * @var string
      */
-    protected $signature = 'raindrops:model
+    protected $signature = 'hailstorm:model
                             {name : The name of the model.}
                             {--table= : The name of the table.}
                             {--route= : Base route for the model.}
@@ -157,7 +158,7 @@ class MakeModelCommand extends GeneratorCommand
         /*$stub = str_replace('{{entityNamePlural}}',
             str_plural(array_pop(explode('\\', $entity))),
             $stub);*/
-        $stub = str_replace('{{entityNamePlural}}', str_plural($name),
+        $stub = str_replace('{{entityNamePlural}}', Str::plural($name),
             $stub);
         return $this;
     }

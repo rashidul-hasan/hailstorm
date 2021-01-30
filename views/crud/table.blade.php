@@ -1,14 +1,12 @@
-@extends(config('raindrops.crud.layout'))
+@extends(config('hailstorm.crud.layout'))
 
-@section('raindrops-header')
-    @include('raindrops::styles.styles')
-@stop
+
 
 @section('raindrops-action')
     {!! $buttons !!}
 @stop
 
-@section('raindrops')
+@section('hailstorm')
 
     <div class="row">
         <div class="col-md-12">
@@ -18,19 +16,5 @@
 
 @stop
 
-@section('raindrops-footer')
-    @include('raindrops::scripts.php-to-js')
-    @include('raindrops::scripts.dropdown')
-    @include('raindrops::scripts.delete')
-@stop
 
-@isset($include)
-    @if(is_array($include))
-        @foreach($include as $view)
-            @includeIf($view)
-        @endforeach
-    @else
-        @includeIf($include)
-    @endif
-@endisset
 

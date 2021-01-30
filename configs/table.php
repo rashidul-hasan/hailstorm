@@ -119,7 +119,7 @@ return [
         |
         */
 
-        'table_view' => 'raindrops::datatable.table',
+        'table_view' => 'hailstorm::datatable.table',
 
 
         /*
@@ -131,7 +131,7 @@ return [
         | Supported: string
         |
         */
-        'script_view' => 'raindrops::datatable.script',
+        'script_view' => 'hailstorm::datatable.script',
 
 
     ],

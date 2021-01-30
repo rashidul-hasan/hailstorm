@@ -22,26 +22,26 @@ class HailstormServiceProvider extends ServiceProvider
     public function boot()
     {
         // load views
-        $this->loadViewsFrom(__DIR__.'/../views', 'raindrops');
+        $this->loadViewsFrom(__DIR__.'/../views', 'hailstorm');
 
         // publish views
         $this->publishes([
-            __DIR__.'/../views' => resource_path('views/vendor/raindrops'),
-        ], 'raindrops');
+            __DIR__.'/../views' => resource_path('views/vendor/hailstorm'),
+        ], 'hailstorm');
 
         $this->publishes([
-            __DIR__.'/../public' => public_path('vendor/raindrops'),
-        ], 'raindrops-public');
+            __DIR__.'/../public' => public_path('vendor/hailstorm'),
+        ], 'hailstorm-public');
 
         // publish configs
         $this->publishes([
-            __DIR__ . '/../configs' => config_path('raindrops'),
-        ], 'raindrops');
+            __DIR__ . '/../configs' => config_path('hailstorm'),
+        ], 'hailstorm');
 
         // publish stub files for the generator
         $this->publishes([
-            __DIR__ . '/Generator/stubs/' => base_path('resources/raindrops/'),
-        ], 'raindrops');
+            __DIR__ . '/Generator/stubs/' => base_path('resources/hailstorm/'),
+        ], 'hailstorm');
 
         // for js vars
         // https://github.com/laracasts/PHP-Vars-To-Js-Transformer
@@ -91,8 +91,8 @@ class HailstormServiceProvider extends ServiceProvider
         // register js vars stuffs
         // https://github.com/laracasts/PHP-Vars-To-Js-Transformer
         $this->app->singleton('JavaScript', function ($app) {
-            $view = 'raindrops::scripts.php-to-js';
-            $namespace = 'raindrops';
+            $view = 'hailstorm::scripts.php-to-js';
+            $namespace = 'hailstorm';
 
             $binder = new LaravelViewBinder($app['events'], $view);
 

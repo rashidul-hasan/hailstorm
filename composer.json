@@ -9,10 +9,6 @@
             "email": "rashidul69@gmail.com"
         }
     ],
-    "require": {
-        "yajra/laravel-datatables-fractal": "^1.0",
-        "yajra/laravel-datatables-oracle": "^8.0"
-    },
     "autoload": {
         "psr-4": {
             "Rashidul\\Hailstorm\\": "src/"

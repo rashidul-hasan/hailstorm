@@ -11,7 +11,7 @@ class MakeMigrationCommand extends GeneratorCommand
      *
      * @var string
      */
-    protected $signature = 'raindrops:migration
+    protected $signature = 'hailstorm:migration
                             {name : The name of the migration.}
                             {--schema= : The name of the schema.}
                             {--indexes= : The fields to add an index too.}

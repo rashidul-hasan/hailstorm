@@ -5,6 +5,7 @@ namespace Rashidul\Hailstorm\Generator\Command;
 use File;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Str;
 use Nwidart\Modules\Facades\Module;
 
 class ScaffoldCommand extends Command
@@ -14,7 +15,7 @@ class ScaffoldCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'raindrops:scaffold
+    protected $signature = 'hailstorm:scaffold
                             {entity : The name of the Crud.}
                             {--table= : Fields name for the form & migration.}
                             {--route= : Base route, default is table name.}
@@ -65,7 +66,7 @@ class ScaffoldCommand extends Command
     public function handle()
     {
         $entity = $this->argument('entity');
-        $tableName = ($this->option('table')) ? $this->option('table') : str_plural(snake_case($entity));
+        $tableName = ($this->option('table')) ? $this->option('table') : Str::plural(Str::snake($entity));
         $this->routeName = ($this->option('route')) ? $this->option('route') : $tableName;
         $fields = rtrim($this->option('fields'), ';');
         $migrationName = $tableName;
@@ -139,9 +140,9 @@ class ScaffoldCommand extends Command
             }
         }
 
-        $this->call('raindrops:controller', ['name' => $controllerNamespace . $entity . 'Controller', '--model-name' => $entity, '--model-namespace' => $modelNamespace]);
-        $this->call('raindrops:model', ['name' => $modelNamespace . $entity, '--table' => $tableName, '--route' => $this->routeName, '--fields' => $fields]);
-        $this->call('raindrops:migration', ['name' => $migrationName, '--schema' => $fields, '--path' => $migrationDirectory    /*, '--pk' => $primaryKey, '--indexes' => $indexes, '--foreign-keys' => $foreignKeys*/]);
+        $this->call('hailstorm:controller', ['name' => $controllerNamespace . $entity . 'Controller', '--model-name' => $entity, '--model-namespace' => $modelNamespace]);
+        $this->call('hailstorm:model', ['name' => $modelNamespace . $entity, '--table' => $tableName, '--route' => $this->routeName, '--fields' => $fields]);
+        $this->call('hailstorm:migration', ['name' => $migrationName, '--schema' => $fields, '--path' => $migrationDirectory    /*, '--pk' => $primaryKey, '--indexes' => $indexes, '--foreign-keys' => $foreignKeys*/]);
 
 
         // For optimizing the class loader

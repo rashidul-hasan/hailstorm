@@ -11,6 +11,7 @@ namespace Rashidul\Hailstorm\Controllers;
 use Illuminate\Container\Container;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller;
+use Rashidul\Hailstorm\Constants;
 use Rashidul\Hailstorm\Crud\Create;
 use Rashidul\Hailstorm\Crud\CrudAction;
 use Rashidul\Hailstorm\Crud\Data;
@@ -46,15 +47,17 @@ abstract class BaseController extends Controller
     protected $dataTransformer = DataTableTransformer::class;
 
     // views
-    protected $indexView = 'raindrops::crud.table';
-    protected $createView = 'raindrops::crud.form';
-    protected $detailsView = 'raindrops::crud.table';
-    protected $editView = 'raindrops::crud.form';
+    protected $indexView = 'hailstorm::crud.table';
+    protected $createView = 'hailstorm::crud.form';
+    protected $detailsView = 'hailstorm::crud.table';
+    protected $editView = 'hailstorm::crud.form';
 
     // class to handle crud actions
     protected $crudAction;
 
     protected $container;
+
+    protected $crudType = Constants::CRUDTYPE_MODAL;
 
     /**
      * BaseController constructor.
@@ -101,4 +104,13 @@ abstract class BaseController extends Controller
         }
     }
 
+    protected function getRoute($route, $id = null) {
+        if ($id) return route($this->routePrefix . '.' .$route, $id);
+        return route($this->routePrefix . '.' .$route);
+    }
+
+    protected function getEntityName() {
+        if (property_exists($this, 'entityName')) return $this->entityName;
+        return ucfirst($this->routePrefix);
+    }
 }

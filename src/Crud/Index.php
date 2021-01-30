@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: rashidul
- * Date: 14-Oct-17
- * Time: 8:08 PM
- */
 
 namespace Rashidul\Hailstorm\Crud;
 

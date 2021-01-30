@@ -1,14 +1,10 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: rashidul
- * Date: 14-Oct-17
- * Time: 8:09 PM
- */
 
 namespace Rashidul\Hailstorm\Crud;
 
 
+use Illuminate\Support\Str;
+use Rashidul\Hailstorm\Constants;
 use Rashidul\Hailstorm\Facades\FormBuilder;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -28,13 +24,22 @@ trait Create
         $buttons = $this->crudAction->renderActions('create', $this->model);
 
         $this->viewData = [
-            'title' => 'Add New ' . $this->model->getEntityName(),
-            'form' => $form,
+            'fields' => $this->fields,
             'buttons' => $buttons,
             'model' => $this->model,
-            'view' => $this->createView,
-            'success' => true
+            'dataRoute' => $this->getRoute('index'),
+            'routePrefix' => $this->routePrefix,
+            'success' => true,
+            'entityName' => Str::singular($this->getEntityName())
         ];
+        if ($this->crudType === Constants::CRUDTYPE_MODAL) {
+            $this->viewData['title'] = Str::plural($this->getEntityName());
+            $this->viewData['view'] = 'hailstorm::crud-modal.index';
+        } else {
+            $this->viewData['title'] = 'Add New ' . $this->getEntityName();
+            $this->viewData['view'] = $this->createView;
+        }
+
 
         $this->callHookMethod('creating');
 
