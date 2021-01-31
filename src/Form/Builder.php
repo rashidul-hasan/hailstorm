@@ -242,6 +242,7 @@ class Builder
                             'field' => $field,
                             'label' => $label,
                             'options' => $options['options'],
+                            'required' => $required
                         ])->render();
 
                         break;
@@ -262,6 +263,25 @@ class Builder
                             'field' => $field,
                             'label' => $label,
                             'options' => $opts,
+                            'required' => $required
+                        ])->render();
+
+                        break;
+
+                    case 'checkbox':
+                        $markup .= view("{$viewRoot}.checkbox", [
+                            'field' => $field,
+                            'label' => $label,
+                            'required' => $required,
+                        ])->render();
+
+                        break;
+
+                    case 'radio':
+                        $markup .= view("{$viewRoot}.radio", [
+                            'field' => $field,
+                            'label' => $label,
+                            'options' => $options['options'],
                         ])->render();
 
                         break;
@@ -764,7 +784,7 @@ class Builder
 
     private function getLabel($field, $options)
     {
-        return $options['label'] ?? ucfirst($field);
+        return $options['label'] ?? ucwords(str_replace("_", " ", $field));
     }
 
     private function getErrorsFromRequest()
