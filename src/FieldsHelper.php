@@ -1,18 +1,27 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: rashed
- * Date: 20-Jun-17
- * Time: 4:31 PM
- */
 
-namespace Rashidul\Hailstorm\Model;
+namespace Rashidul\Hailstorm;
 
 
-use Rashidul\Hailstorm\Constants;
-
-class ModelHelper
+class FieldsHelper
 {
+
+    // take fields array from controller & populate all the required options
+    // for example, when putting just the field name, populate proper type & label
+    public static function prepareFieldsArr( array $fields )
+    {
+        $indexFields = [];
+
+        $fields = $model->getFields();
+
+        foreach ($fields as $field_name => $options){
+            if (array_key_exists('index', $options) && $options['index']){
+                $indexFields[$field_name] = $options;
+            }
+        }
+
+        return $indexFields;
+    }
 
     public static function getIndexFields( $model )
     {
@@ -200,12 +209,18 @@ class ModelHelper
     public static function fillWithRequestData($model, $request, $fieldsArr)
     {
 
-        foreach ($fieldsArr as $field => $options)
+        $fields = self::getFormFields($fieldsArr);
+
+
+        foreach ($fields as $field => $options)
         {
+            // skip fields who's `form` option is set to `method`
+            if (array_key_exists('form', $options) && $options['form'] == 'method') continue;
+
             // save the data according to the field type
             switch ($options['type'])
             {
-                case Constants::TYPE_CHECKBOX:
+                case 'checkbox':
 
                     if ($request->has($field) && $request->get($field) === 'on')
                     {

@@ -10,6 +10,7 @@ namespace Rashidul\Hailstorm\Crud;
 
 
 use Illuminate\Database\QueryException;
+use Rashidul\Hailstorm\FieldsCollection;
 use Rashidul\Hailstorm\Model\ModelHelper;
 
 trait Store
@@ -24,9 +25,10 @@ trait Store
     public function store()
     {
 
-        $this->validate($this->request, $this->model->getvalidationRules(), [], $this->model->getFieldsWithLabels());
+        $fieldsCollection = new FieldsCollection($this->fields);
+        $this->request->validate($fieldsCollection->getValidationRules());
 
-        $this->model = ModelHelper::fillWithRequestData($this->model, $this->request);
+        $this->model = ModelHelper::fillWithRequestData($this->model, $this->request, $fieldsCollection->getFormFields());
 
         $this->callHookMethod('storing');
 

@@ -1,5 +1,71 @@
 @extends(config('hailstorm.crud.layout'))
+@section('css')
+    <style>
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid #F1C40F;
+            width: 20px;
+            height: 20px;
+            -webkit-animation: spin 2s linear infinite; /* Safari */
+            animation: spin 0.5s linear infinite;
+        }
 
+        /* Safari */
+        @-webkit-keyframes spin {
+            0% { -webkit-transform: rotate(0deg); }
+            100% { -webkit-transform: rotate(360deg); }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #snackbar {
+            visibility: hidden;
+            min-width: 250px;
+            margin-left: -125px;
+            color: #fff;
+            text-align: center;
+            border-radius: 5px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1;
+            left: 50%;
+            top: 30px;
+            height: 55px;
+            font-size: 17px;
+        }
+
+        /*snackbar*/
+        #snackbar.show {
+            visibility: visible;
+            -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+            animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        }
+
+        @-webkit-keyframes fadein {
+            from {bottom: 0; opacity: 0;}
+            to {bottom: 30px; opacity: 1;}
+        }
+
+        @keyframes fadein {
+            from {bottom: 0; opacity: 0;}
+            to {bottom: 30px; opacity: 1;}
+        }
+
+        @-webkit-keyframes fadeout {
+            from {bottom: 30px; opacity: 1;}
+            to {bottom: 0; opacity: 0;}
+        }
+
+        @keyframes fadeout {
+            from {bottom: 30px; opacity: 1;}
+            to {bottom: 0; opacity: 0;}
+        }
+    </style>
+@endsection
 
 @section('hailstorm')
     <button class="btn btn-info btn-sm" id="btn-create">Add New</button>
@@ -34,9 +100,7 @@
                         </button>
                     </div>
                     <div class="modal-body">
-                        <div class="alert alert-danger print-error-msg" style="display:none">
-                            <ul></ul>
-                        </div>
+                        <div class="alert-wrap"></div>
                         {!! $form ?? '' !!}
                     </div>
                     <div class="modal-footer">
@@ -48,6 +112,7 @@
         </div>
     </div>
 
+    <div id="snackbar"></div>
 @stop
 
 @push('scripts')
@@ -57,6 +122,54 @@
             var storeRoute = '{{ route("{$routePrefix}.store") }}';
             var entityName = '{{ $entityName}}';
 
+            //selectors
+            var form = $("#form-create");
+            var modal = $("#modal-create");
+            var btnSave = $("#modal-create .btn-save");
+
+            // utils
+            function loading(selector, isLoading, label = "") {
+                //selector can be jq selector string or a jq object
+                var selectorObj;
+                if (typeof selector === 'string' || selector instanceof String) {
+                    selectorObj = $(selector);
+                } else if (selector instanceof jQuery) {
+                    selectorObj = selector;
+                }
+                if(isLoading) {
+                    selectorObj.html("<div class='loader'></div>").attr('disabled', true);
+                } else {
+                    selectorObj.html(label).attr('disabled', false);
+                }
+            }
+
+            function show_alert(msg, isSuccess = true) {
+                if(isSuccess) {
+                    $(".alert-wrap").html('<div class="alert alert-success">'+ msg+'</div>')
+                } else {
+                    $(".alert-wrap").html('<div class="alert alert-danger">'+ msg+'</div>')
+                }
+            }
+
+            function remove_alert() {
+                $(".alert-wrap").html('');
+            }
+
+            function printErrorMsg (msg) {
+                var html = '';
+                $.each( msg, function( key, value ) {
+                    html += '<li>'+value+'</li>';
+                });
+                show_alert(html, false);
+            }
+
+            function showSnackbar(msg, isSuccess) {
+                var x = document.getElementById("snackbar");
+                x.style.backgroundColor = isSuccess ? '#0c0' : '#c00';
+                x.innerText = msg;
+                x.className = "show";
+                setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+            }
             /*/!*var dtable = $('#dtable').DataTable({
                 processing: true,
                 serverSide: true,
@@ -97,28 +210,22 @@
 
             // open account create modal
             $("#btn-create").on("click", function (e) {
-                console.log('ksdfjsdhgf');
                 e.preventDefault();
-                $(".print-error-msg").css('display','none');
+                remove_alert();
                 $("#head_text").html(`Add ${entityName}`);
-
-                var form = $("#form-create");
                 form.attr("action", storeRoute);
                 form.attr("method", "POST");
-                $("input[name=name]").val("");
-                $("select[name=type]").val("");
-                $("textarea[name=notes]").val("");
-                $('input[name=is_active]').removeAttr('Checked');
-                $('input[name=is_default]').removeAttr('Checked');
-                $("#modal-create").modal();
+                form.trigger("reset");
+                modal.modal();
             });
 
 
             //insert data
-            $("#form-create").on("click", ".btn-save", function (e) {
+            form.on("click", ".btn-save", function (e) {
                 e.preventDefault();
+                loading(btnSave, true);
+                remove_alert();
                 $(".print-error-msg").css('display','none');
-                var form = $("#form-create");
                 var action = form.attr("action");
                 var data = new FormData(form[0]);
                 data.append("_method", form.attr("method"));
@@ -131,23 +238,26 @@
                     contentType: false,
                     processData: false
                 })
-                    .done(function(data) {
+                    .done(data => {
                         if(data.success){
-                            dtable.ajax.reload();
+                            // dtable.ajax.reload();
                             form.trigger("reset");
-                            $("#modal-create").modal('hide');
-                            toastr.success(data.message, '');
-
+                            modal.modal('hide');
+                            showSnackbar(data.data.message, true);
+                            loading(btnSave, false, "Save");
                         } else {
-                            toastr.error("Something went wrong!", 'Error');
+                            show_alert("Something went wrong!", false);
+                            loading(btnSave, false, "Save");
                         }
                     })
                     .fail(function(xhr) {
                         //button.html("Save").attr("disabled", false);
                         if(xhr.status == 422){
                             printErrorMsg(xhr.responseJSON.errors);
+                            loading(btnSave, false, "Save");
                         } else {
-                            toastr.error("Something went wrong!", 'Error');
+                            show_alert("Something went wrong!", false);
+                            loading(btnSave, false, "Save");
                         }
                     });
             });
@@ -245,14 +355,7 @@
 
             });
 
-            // error masage
-            function printErrorMsg (msg) {
-                $(".print-error-msg").find("ul").html('');
-                $(".print-error-msg").css('display','block');
-                $.each( msg, function( key, value ) {
-                    $(".print-error-msg").find("ul").append('<li>'+value+'</li>');
-                });
-            }
+
         })
     </script>
 @endpush
