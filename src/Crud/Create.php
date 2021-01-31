@@ -20,7 +20,11 @@ trait Create
     {
         $this->crudAction->failIfNotPermitted('add');
 
-        $form = FormBuilder::build($this->model);
+        $form = FormBuilder::build($this->fields);
+//        dd($form);
+        /*foreach ($this->fields as $field => $options) {
+            dd($field);
+        }*/
         $buttons = $this->crudAction->renderActions('create', $this->model);
 
         $this->viewData = [
@@ -30,7 +34,8 @@ trait Create
             'dataRoute' => $this->getRoute('index'),
             'routePrefix' => $this->routePrefix,
             'success' => true,
-            'entityName' => Str::singular($this->getEntityName())
+            'entityName' => Str::singular($this->getEntityName()),
+            'form' => $form
         ];
         if ($this->crudType === Constants::CRUDTYPE_MODAL) {
             $this->viewData['title'] = Str::plural($this->getEntityName());

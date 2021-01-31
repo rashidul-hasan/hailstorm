@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: rashidul
- * Date: 4/6/2017
- * Time: 10:30 PM
- */
 
 namespace Rashidul\Hailstorm\Form;
 
@@ -147,23 +141,163 @@ class Builder
     /**
      * Start building your form
      *
-     * @param $model
-     * @return $this
-     * @throws Exception
+     * @param $fields
+     * @return void
      */
-    public function build($model = null)
+    public function build($fields)
     {
+        $formNamespace = 'horizontal';
+        $viewRoot = "hailstorm::form.{$formNamespace}";
+        $markup = '';
 
-        if ( !is_null($model) && !$model instanceof Model )
-        {
-            throw new \InvalidArgumentException("Argument 1 of build method must be an instance of Illuminate\\Database\\Eloquent\\Model");
+        foreach ( $fields as $field => $options) {
+
+            if (is_int($field)) {
+                // simple text field. only has the field name in the fields array.
+                $markup .= view("{$viewRoot}.basic", [
+                    'field' => $options,
+                    'label' => ucfirst($options),
+                    'type' => 'text',
+                ])->render();
+                continue;
+            }
+            if (is_array($options)) {
+
+                // form is false then abort
+                if (array_key_exists('form', $options) && !$options['form']) {
+                    continue;
+                }
+
+                if (array_key_exists('form', $options) && $options['form'] != $this->formType) {
+                    continue;
+                }
+
+                // get the form's html from a model method
+                if (array_key_exists('form', $options) && $options['form'] === 'method'){
+                    $markup .= $this->model->{$options['formMethod']}();
+                    continue;
+                }
+
+                // raw html
+                if (array_key_exists('html', $options) && $options['html'] != '') {
+                    $markup .= $options['html'];
+                    continue;
+                }
+
+//                $value = $this->model->exists ? $this->model->getOriginal($field) : null;
+
+                if (isset($options['value'])){
+                    $value = $options['value'];
+                }
+
+                // if old input value exists in the session
+                // for this field, use that
+                if (!empty($this->oldInputs[$field])) {
+                    $value = $this->oldInputs[$field];
+                }
+
+                $required = $this->isRequired($options);
+
+                $unique = $this->isUnique($options);
+
+                $label = $this->getLabel($field, $options);
+
+                $attributes = isset($options['attributes']) ? $options['attributes'] : null;
+
+                $error_class = '';
+
+                $error_text = '';
+
+                if ($this->errors != null && $this->errors->any()) {
+                    if ($this->errors->has($field)) {
+                        $error_class = 'has-error';
+                        $error_text = $this->errors->first($field);
+                    }
+                }
+
+                switch ($options['type']) {
+                    case 'textarea':
+
+                        $markup .= view("$viewRoot.textarea", [
+                            'field' => $field,
+                            'label' => $label,
+                            'required' => $required,
+                        ])->render();
+
+                        break;
+
+                    case 'email':
+
+                        $markup .= view("{$viewRoot}.basic", [
+                            'field' => $field,
+                            'label' => $label,
+                            'type' => 'email',
+                        ])->render();
+
+                        break;
+
+                    case 'select':
+
+                        $markup .= view("{$viewRoot}.select", [
+                            'field' => $field,
+                            'label' => $label,
+                            'options' => $options['options'],
+                        ])->render();
+
+                        break;
+
+                    case 'select_db':
+
+                        // TODO.
+                        // need to let user filter some records before adding them to option list
+                        // this data should be pulled via eloquent instead of raw DB query
+                        // refactor it to use the new Element class
+                        // required options: `table`, `key_column`, `value_column`
+                        $table_data = DB::table($options['table'])->select($options['key_column'], $options['value_column'])->get();
+                        $opts = []; //[key => value]
+                        foreach ($table_data as $d) {
+                            $opts[$d->{$options['key_column']}] = $d->{$options['value_column']};
+                        }
+                        $markup .= view("{$viewRoot}.select", [
+                            'field' => $field,
+                            'label' => $label,
+                            'options' => $opts,
+                        ])->render();
+
+                        break;
+
+                }
+            }
+            else
+            {
+                $markup .= $options;
+            }
+
+//            $count++;
+
+            // when we generated elements as the column number, or there's no
+            // elemnt left to build
+            // then we add the row in the form, nullify the row object,
+            // and reset the counter
+            /*if ($count === $this->columns || $field === $lastField)
+            {
+                // add the row to form
+                $this->form->text($row->render());
+
+                // clear the previous row object and create a new
+                $row = null;
+                $row = Element::build('div')
+                    ->addClass('row');
+
+                // reset the counter
+                $count = 0;
+            }*/
+
+
+
         }
 
-        $this->model = $model;
-
-        $this->formType = $this->model->exists ? 'edit' : 'create';
-
-        return $this;
+        return $markup;
     }
 
     public function section($name, $fields)
@@ -628,13 +762,9 @@ class Builder
             : false;
     }
 
-    private function getLabel($options, $required, $unique)
+    private function getLabel($field, $options)
     {
-        $required = $required ? ' <span class="required-field">*</span>' : '';
-
-        $unique = $unique ? ' (Unique)' : '';
-
-        return $options['label'] . $unique . $required;
+        return $options['label'] ?? ucfirst($field);
     }
 
     private function getErrorsFromRequest()
@@ -731,407 +861,7 @@ class Builder
         $elementClass = 'form-control';
 
 
-        $markup = '';
 
-        foreach ( $section_fields as $field => $options) {
-
-            if (is_array($options)) {
-
-                // form is false then abort
-                if (array_key_exists('form', $options) && !$options['form']) {
-                    continue;
-                }
-
-                if (array_key_exists('form', $options) && $options['form'] != $this->formType) {
-                    continue;
-                }
-
-                // get the form's html from a model method
-                if (array_key_exists('form', $options) && $options['form'] === 'method'){
-                    $markup .= $this->model->{$options['formMethod']}();
-                    continue;
-                }
-
-                // raw html
-                if (array_key_exists('html', $options) && $options['html'] != '') {
-                    $markup .= $options['html'];
-                    continue;
-                }
-
-                $value = $this->model->exists ? $this->model->getOriginal($field) : null;
-
-                if (isset($options['value'])){
-                    $value = $options['value'];
-                }
-
-                // if old input value exists in the session
-                // for this field, use that
-                if (!empty($this->oldInputs[$field])) {
-                    $value = $this->oldInputs[$field];
-                }
-
-                $required = $this->isRequired($options);
-
-                $unique = $this->isUnique($options);
-
-                $label = $this->getLabel($options, $required, $unique);
-
-                $attributes = isset($options['attributes']) ? $options['attributes'] : null;
-
-                $error_class = '';
-
-                $error_text = '';
-
-                if ($this->errors != null && $this->errors->any()) {
-                    if ($this->errors->has($field)) {
-                        $error_class = 'has-error';
-                        $error_text = $this->errors->first($field);
-                    }
-                }
-
-                switch ($options['type']) {
-                    case 'textarea':
-
-                        $element = Element::build('textarea')
-                            ->addClass($elementClass)
-                            ->setName($field)
-                            ->setRequired($required)
-                            ->set('rows', '10')
-                            ->set($attributes)
-                            ->text($value)
-                            ->render();
-
-                        break;
-
-                    case 'editor':
-
-                        $element = Element::build('textarea')
-                            ->addClass($elementClass)
-                            ->addClass('editor')
-                            ->setName($field)
-                            ->setRequired($required)
-                            ->set('rows', '10')
-                            ->set($attributes)
-                            ->text($value)
-                            ->render();
-
-                        break;
-
-                    case 'select':
-
-                        $element = Element::build('select')
-                            ->addClass($elementClass)
-                            ->addClass('select2')
-                            ->setName($field)
-                            ->set($attributes)
-                            ->setRequired($required);
-
-                        $default = Element::build('option')
-                            ->setSelected(true)
-                            ->setValue('')
-                            ->setDisabled(true)
-                            ->text('--Select One--');
-
-                        $element->addChild($default);
-
-                        foreach ($options['options'] as $option_key => $option_value) {
-
-                            $isSelected = $value === $option_key ? true : false;
-
-                            $option = Element::build('option')
-                                ->setValue($option_key)
-                                ->setSelected($isSelected)
-                                ->text($option_value);
-
-                            $element->addChild($option);
-
-                        }
-
-                        $element = $element->render();
-
-                        break;
-
-                    case 'select_db':
-
-                        // TODO.
-                        // need to let user filter some records before adding them to option list
-                        // this data should be pulled via eloquent instead of raw DB query
-                        // refactor it to use the new Element class
-                        $table_data = DB::table($options['table'])->select($options['options'])->get();
-
-                        $option_key = $options['options'][0];
-
-                        $element = sprintf('<select name="%s" class="form-control select2" %s>', $field, $required);
-
-                        $element .= '<option value="" disabled selected>--Select One--</option>';
-                        foreach ($table_data as $table_data_single) {
-                            $option_value = count($options['options']) > 2 ? $table_data_single->{$options['options'][1]} . ' ' . $table_data_single->{$options['options'][2]} : $table_data_single->{$options['options'][1]};
-                            $element .= sprintf('<option value="%s">%s</option>', $table_data_single->{$option_key}, $option_value);
-                        }
-                        $element .= '</select>';
-
-                        break;
-
-                    // build a dropdown for a foreign key
-                    // type is `relation` and mostly belongsTo relation
-                    // for Eloquent
-                    case 'relation':
-
-                        // get the related model
-                        $relatedModel = $this->model->{$options['options'][0]}()->getRelated();
-
-                        // get collection of all rows from the related model
-                        if (isset($options['scope'])) {
-                            $relatedCollection = $relatedModel->{$options['scope']}()->get();
-                        } else {
-                            $relatedCollection = $relatedModel->all();
-                        }
-
-                        // if this dropdwn depends on the value from another field, there should be
-                        // a `depends` key on the field's option array, just add that field's name as a data
-                        // attribute on the select element. we'll handle it on the cleintside via jQuery
-                        $dependsOn = '';
-                        if (isset($options['parent']) && $options['parent'] != '') {
-                            $dependsOn = 'data-parent="' . $options['parent'] . '"';
-
-                            // send the collection to javascript, we need that to populate the
-                            // options dynamically on the view
-                            JavaScript::put(
-                                [
-                                    $field => [
-                                        'data' => $relatedCollection->toArray(),
-                                        'indexColumn' => $options['options'][1],
-                                        'selectedId' => $value,
-                                        'keyName' => $relatedModel->getKeyName()
-                                    ]
-                                ]
-                            );
-
-                            // generate dropdown with no options
-                            $element = sprintf('<select name="%s" class="form-control select2" %s %s>', $field, $dependsOn, $required);
-
-                            $element .= '<option value="" disabled selected>--Select One--</option>';
-                            $element .= '</select>';
-
-                            break;
-
-                        }
-
-                        // generate the dropdown
-                        $element = sprintf('<select name="%s" class="form-control select2" %s %s>', $field, $dependsOn, $required);
-
-                        $element .= '<option value="" disabled selected>--Select One--</option>';
-                        $element .= \Rashidul\Hailstorm\Form\Helper::collectionToOptions($relatedCollection, ['id', $options['options'][1]], $value);
-                        $element .= '</select>';
-
-                        break;
-
-                    // eloquent many to many relation
-                    case 'relation_many':
-
-                        // get the related model
-                        $relationName = $options['options'][0];
-                        $relatedModel = $this->model->{$relationName}()->getRelated();
-
-                        // if model exists, get the ids of related model
-                        $values = [];
-
-                        if ($this->model->exists){
-                            $values = $this->model->{$relationName}->pluck($relatedModel->getKeyName())->toArray();
-                        }
-
-                        // get collection of all rows from the related model
-                        if (isset($options['scope'])) {
-                            $relatedCollection = $relatedModel->$options['scope']()->get();
-                        } else {
-                            $relatedCollection = $relatedModel->all();
-                        }
-
-                        // generate the dropdown
-                        $element = sprintf('<select name="%s[]" class="form-control select2" %s multiple>', $field, $required);
-
-                        $element .= \Rashidul\Hailstorm\Form\Helper::collectionToOptions($relatedCollection, ['id', $options['options'][1]], $values);
-                        $element .= '</select>';
-
-                        break;
-
-                    case 'date':
-
-                        $element = Element::build('input')
-                            ->addClass($elementClass)
-                            ->addClass('datepicker')
-                            ->setName($field)
-                            ->setType('text')
-                            ->set($attributes)
-                            ->setValue($value)
-                            ->setRequired($required)
-                            ->render();
-
-                        break;
-
-                    case 'date_time':
-
-                        $element = Element::build('input')
-                            ->addClass($elementClass)
-                            ->addClass('datetimepicker')
-                            ->setName($field)
-                            ->setValue($value)
-                            ->setType('text')
-                            ->set($attributes)
-                            ->setRequired($required)
-                            ->render();
-
-                        break;
-
-                    case 'file':
-
-                        $element = Element::build('input')
-                            ->addClass($elementClass)
-                            ->setName($field)
-                            ->setType('file')
-                            ->set($attributes)
-                            ->set('accept', $options['accept'])
-                            ->setRequired($required)
-                            ->render();
-
-                        break;
-
-                    case 'image':
-
-                        $accepts = (isset($options['accept'])) ? $options['accept'] : 'image/*';
-                        $element = Element::build('input')
-                            ->addClass($elementClass)
-                            ->setName($field)
-                            ->setType('file')
-                            ->set($attributes)
-                            ->set('accept', $accepts)
-                            ->setRequired($required)
-                            ->render();
-
-                        break;
-
-                    case 'currency':
-
-                        $element = Element::build('input')
-                            ->addClass($elementClass)
-                            ->setName($field)
-                            ->setType('number')
-                            ->setValue($value)
-                            ->set($attributes)
-                            ->set('step', $this->getPrecision($options['precision']))
-                            ->setRequired($required)
-                            ->render();
-
-                        break;
-
-                    // TODO.
-                    // 2. extract the element generation code to diffeerent methods,
-
-                    case 'time':
-
-                        $element = Element::build('input')
-                            ->addClass($elementClass)
-                            ->addClass('timepicker')
-                            ->setName($field)
-                            ->setValue($value)
-                            ->set($attributes)
-                            ->setType('text')
-                            ->setRequired($required)
-                            ->render();
-
-                        break;
-
-                    case 'checkbox':
-                        $element = Element::build('input')
-                            ->setName($field)
-                            ->setType('checkbox')
-                            ->set($attributes)
-                            ->setRequired($required);
-                        if ($value) {
-                            $element->set('checked', 'checked');
-                        }
-                        $element = $element->render();
-
-                        break;
-
-                    default:
-
-                        $element = Element::build('input')
-                            ->addClass($elementClass)
-                            ->setName($field)
-                            ->setValue($value)
-                            ->set($attributes)
-                            ->setType($options['type'])
-                            ->setRequired($required)
-                            ->render();
-
-                        $fields[$field] = $element;
-
-
-                }
-
-                /*$placeholders = [
-                    '{error_class}' => $error_class,
-                    '{label_text}' => $label,
-                    '{element}' => $element,
-                    '{error_text}' => $error_text
-
-                ];*/
-
-                $data = [
-                    'error_class' => $error_class,
-                    'label' => $label,
-                    'field' => $element,
-                    'error_text' => $error_text,
-                ];
-
-                if ($options['type'] == 'checkbox'){
-                    $element = view($templateRoot . '.checkbox', $data)->render();
-                } elseif ($options['type'] == 'radio'){
-
-                } else {
-                    $element = view($templateRoot. '.basic', $data)->render();
-                }
-
-                $markup .= $element;
-
-                /*$wrapper = Element::build('div')
-                    ->addClass($wrapperClass)
-                    ->text($element)
-                    ->render();
-
-                $row->text($element);*/
-            }
-            else
-            {
-                $markup .= $options;
-            }
-
-//            $count++;
-
-            // when we generated elements as the column number, or there's no
-            // elemnt left to build
-            // then we add the row in the form, nullify the row object,
-            // and reset the counter
-            /*if ($count === $this->columns || $field === $lastField)
-            {
-                // add the row to form
-                $this->form->text($row->render());
-
-                // clear the previous row object and create a new
-                $row = null;
-                $row = Element::build('div')
-                    ->addClass('row');
-
-                // reset the counter
-                $count = 0;
-            }*/
-
-
-
-        }
-
-        $this->form->text($markup);
 
 
     }
