@@ -74,19 +74,15 @@
             <table id="dtable" class="table table-striped table-hover table-sm " style="width:100%">
                 <thead>
                 <tr>
-                    <th width="25%">Name</th>
-                    <th width="10%">Type</th>
-                    <th width="15%">Balance</th>
-                    <th width="15%">Status</th>
-                    <th width="10%">Default</th>
-                    <th width="25%">Actions</th>
+                    @foreach($indexFields as $fieldName => $options)
+                    <th>{{$options['label']}}</th>
+                    @endforeach
                 </tr>
                 </thead>
             </table>
         </div>
     </div>
 
-    <!--add account modal-->
     <div class="modal fade" id="modal-create" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
@@ -170,7 +166,7 @@
                 x.className = "show";
                 setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
             }
-            /*/!*var dtable = $('#dtable').DataTable({
+            var dtable = $('#dtable').DataTable({
                 processing: true,
                 serverSide: true,
                 searching: true,
@@ -182,31 +178,11 @@
                     'copy'
                 ],
                 columns: [
-                    {data: 'name', name: 'name'},
-                    {data: 'type', name: 'type'},
-                    {data: 'Balance', name: 'Balance', searchable: false, sortable: false},
-                    {data: 'is_active', name:'is_active', render: function ( data, type, row ) {
-                            return (data === 1)  ? '<span class="badge badge-success font-size-12">Active</span>'
-                                : '<span class="badge badge-danger font-size-12">Inactive</span>';
-                        }
-                    },
-                    {data: 'is_default', name:'is_default', render: function ( data, type, row ) {
-                            return (data === 1)  ? '<span class="text-info font-size-12">Yes</span>'
-                                : '<span class="badge badge-default font-size-12">No</span>';
-                        }
-                    },
-                    {
-                        data: null,
-                        "searchable": false,
-                        defaultContent: "<button class='btn btn-sm btn-info dt-btn-edit'><i class=\"fa " +
-                            "fa-edit\"></i></button>" +
-                            "<button class='btn btn-sm btn-danger dt-btn-delete'><i class=\"fa " +
-                            "fa-trash\"></i></button>" +
-                            "<button class='btn btn-sm btn-success dt-btn-addBalance'><i class=\"fa " +
-                            "fa-plus\"></i>Add Money</button>"
-                    },
+                    @foreach($indexFields as $fieldName => $options)
+                    {data: '{{$fieldName}}', name: '{{$fieldName}}'},
+                    @endforeach
                 ]
-            });*!/*/
+            });
 
             // open account create modal
             $("#btn-create").on("click", function (e) {
@@ -240,7 +216,7 @@
                 })
                     .done(data => {
                         if(data.success){
-                            // dtable.ajax.reload();
+                            dtable.ajax.reload();
                             form.trigger("reset");
                             modal.modal('hide');
                             showSnackbar(data.data.message, true);
@@ -357,6 +333,10 @@
 
 
         })
+    </script>
+
+    <script>
+        console.log({dtable});
     </script>
 @endpush
 

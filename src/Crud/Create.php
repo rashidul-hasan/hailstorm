@@ -6,6 +6,7 @@ namespace Rashidul\Hailstorm\Crud;
 use Illuminate\Support\Str;
 use Rashidul\Hailstorm\Constants;
 use Rashidul\Hailstorm\Facades\FormBuilder;
+use Rashidul\Hailstorm\FieldsCollection;
 use Symfony\Component\HttpFoundation\Response;
 
 trait Create
@@ -20,11 +21,8 @@ trait Create
     {
         $this->crudAction->failIfNotPermitted('add');
 
-        $form = FormBuilder::build($this->fields);
-//        dd($form);
-        /*foreach ($this->fields as $field => $options) {
-            dd($field);
-        }*/
+        $fieldsCollection = new FieldsCollection($this->fields);
+        $form = FormBuilder::build($fieldsCollection->getFormFields());
         $buttons = $this->crudAction->renderActions('create', $this->model);
 
         $this->viewData = [
@@ -35,15 +33,10 @@ trait Create
             'routePrefix' => $this->routePrefix,
             'success' => true,
             'entityName' => Str::singular($this->getEntityName()),
-            'form' => $form
+            'form' => $form,
+            $this->viewData['title'] = 'Add New ' . $this->getEntityName(),
+            $this->viewData['view'] = $this->createView
         ];
-        if ($this->crudType === Constants::CRUDTYPE_MODAL) {
-            $this->viewData['title'] = Str::plural($this->getEntityName());
-            $this->viewData['view'] = 'hailstorm::crud-modal.index';
-        } else {
-            $this->viewData['title'] = 'Add New ' . $this->getEntityName();
-            $this->viewData['view'] = $this->createView;
-        }
 
 
         $this->callHookMethod('creating');

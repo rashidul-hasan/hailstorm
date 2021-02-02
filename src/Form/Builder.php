@@ -152,15 +152,6 @@ class Builder
 
         foreach ( $fields as $field => $options) {
 
-            if (is_int($field)) {
-                // simple text field. only has the field name in the fields array.
-                $markup .= view("{$viewRoot}.basic", [
-                    'field' => $options,
-                    'label' => ucfirst($options),
-                    'type' => 'text',
-                ])->render();
-                continue;
-            }
             if (is_array($options)) {
 
                 // form is false then abort
@@ -216,6 +207,16 @@ class Builder
                 }
 
                 switch ($options['type']) {
+                    case 'text':
+
+                        $markup .= view("{$viewRoot}.basic", [
+                            'field' => $field,
+                            'label' => $label,
+                            'type' => 'text',
+                        ])->render();
+
+                        break;
+
                     case 'textarea':
 
                         $markup .= view("$viewRoot.textarea", [

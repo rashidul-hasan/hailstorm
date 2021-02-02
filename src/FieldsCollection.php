@@ -52,6 +52,17 @@ class FieldsCollection
         return $rules;
     }
 
+    public function getIndexFields()
+    {
+        $indexFields = [];
+        foreach ($this->fields as $field_name => $options){
+            if (array_key_exists('index', $options) && $options['index']){
+                $indexFields[$field_name] = $options;
+            }
+        }
+        return $indexFields;
+    }
+
     // take fields array from controller & populate all the required options
     // for example, when putting just the field name, populate proper type & label
     private function expandFields(array $fields)
@@ -63,6 +74,8 @@ class FieldsCollection
                 // simple text field, $options is the name of the field
                 $op['type'] = Constants::TYPE_TEXT;
                 $op['label'] = $this->getLabel($options);
+                // will be shown on datatable
+                $op['index'] = true;
                 $new[$options] = $op;
             }
 
