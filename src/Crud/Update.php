@@ -11,6 +11,7 @@ namespace Rashidul\Hailstorm\Crud;
 
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Rashidul\Hailstorm\FieldsCollection;
 use Rashidul\Hailstorm\Model\ModelHelper;
 
 trait Update
@@ -40,9 +41,10 @@ trait Update
             return $this->responseBuilder->send($this->request, $data);
         }
 
-        $this->validate($request, $this->model->getValidationRules(), [], $this->model->getFieldsWithLabels());
+        $fieldsCollection = new FieldsCollection($this->fields);
+        $this->request->validate($fieldsCollection->getValidationRules());
 
-        $this->model = ModelHelper::fillWithRequestData($this->model, $this->request);
+        $this->model = ModelHelper::fillWithRequestData($this->model, $this->request, $fieldsCollection->getFormFields());
 
         $this->callHookMethod('updating');
 

@@ -77,6 +77,9 @@
                     @foreach($indexFields as $fieldName => $options)
                     <th>{{$options['label']}}</th>
                     @endforeach
+                    @if(count($dtActions))
+                    <th></th>
+                    @endif
                 </tr>
                 </thead>
             </table>
@@ -116,7 +119,9 @@
         $(function () {
 
             var storeRoute = '{{ route("{$routePrefix}.store") }}';
+            var updateRoute = '{{ route("{$routePrefix}.update", "xXx") }}';
             var entityName = '{{ $entityName}}';
+            var formFields = @json($formFields, JSON_PRETTY_PRINT);
 
             //selectors
             var form = $("#form-create");
@@ -166,6 +171,30 @@
                 x.className = "show";
                 setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
             }
+
+            function setValueOnEditForm(data) {
+                for (const [key, value] of Object.entries(formFields)) {
+                    if(value.type === 'text' || value.type === 'email' || value.type === 'number') {
+                        $(`input[name=${key}]`).val(data[key]);
+                    }
+                    if(value.type === 'select' || value.type === 'select_db') {
+                        $(`select[name=${key}]`).val(data[key]);
+                    }
+                    if(value.type === 'checkbox') {
+                        if(data[key]) {
+                            $(`input[name=${key}]`).attr("checked", true);
+                        } else {
+                            $(`input[name=${key}]`).attr("checked", false);
+                        }
+                    }
+                    if(value.type === 'radio') {
+                        $(`input[name=${key}][value=${data[key]}]`).attr("checked", true);
+                    }
+
+                }
+            }
+
+            // data table
             var dtable = $('#dtable').DataTable({
                 processing: true,
                 serverSide: true,
@@ -181,6 +210,16 @@
                     @foreach($indexFields as $fieldName => $options)
                     {data: '{{$fieldName}}', name: '{{$fieldName}}'},
                     @endforeach
+                    //action column
+                    @if(count($dtActions))
+                    {
+                        data: null,
+                        searchable: false,
+                        sortable: false,
+                        defaultContent:
+                            "@foreach($dtActions as $action)<button class='btn btn-primary btn-sm {{$action[3]}}'><i class='{{$action[1]}}''></i> @endforeach"
+                    },
+                    @endif
                 ]
             });
 
@@ -238,68 +277,16 @@
                     });
             });
 
-            //insert money
-            $("#money-form-create").on("click", ".btn-save", function (e) {
-                e.preventDefault();
-                $(".print-error-msg").css('display','none');
-                var form = $("#money-form-create");
-                var action = form.attr("action");
-                var data = new FormData(form[0]);
-                data.append("_method", form.attr("method"));
-
-                $.ajax({
-                    url: action,
-                    method: "POST",
-                    data: data,
-                    cache: false,
-                    contentType: false,
-                    processData: false
-                })
-                    .done(function(data) {
-                        if(data.success){
-                            dtable.ajax.reload();
-                            form.trigger("reset");
-                            $("#money-modal-create").modal('hide');
-                            toastr.success(data.message, '');
-
-                        } else {
-                            toastr.error("Something went wrong!", 'Error');
-                        }
-                    })
-                    .fail(function(xhr) {
-                        //button.html("Save").attr("disabled", false);
-                        if(xhr.status == 422){
-                            printErrorMsg(xhr.responseJSON.errors);
-                        } else {
-                            toastr.error("Something went wrong!", 'Error');
-                        }
-                    });
-            });
-
             //open Edit modal
-            dtable.on('click','.dt-btn-edit', function (e) {
+            dtable.on('click','.btn-edit', function (e) {
                 e.preventDefault();
-                $(".print-error-msg").css('display','none');
-                $("#head_text").html('Edit Account');
                 var data = dtable.row($(this).closest('tr')).data();
-                $("input[name=name]").val(data.name);
-                $("select[name=type]").val(data.type);
-                $("textarea[name=notes]").val(data.notes);
-                if(data.is_active) {
-                    $("input[name=is_active]").attr("checked", true);
-                } else {
-                    $("input[name=is_active]").attr("checked", false);
-                }
-                if(data.is_default) {
-                    $("input[name=is_default]").attr("checked", true);
-                } else {
-                    $("input[name=is_default]").attr("checked", false);
-                }
-                var form = $("#form-create");
-                form.attr("action", route('accounts.update', data.id));
+                remove_alert();
+                $("#head_text").html(`Edit ${entityName}`);
+                setValueOnEditForm(data);
+                form.attr("action", updateRoute.replace('xXx', data.id));
                 form.attr("method", "PUT");
-
-                $("#modal-create").modal();
+                modal.modal();
             });
 
             //delete data

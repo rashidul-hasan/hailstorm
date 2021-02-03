@@ -59,6 +59,14 @@ abstract class BaseController extends Controller
 
     protected $crudType = Constants::CRUDTYPE_MODAL;
 
+    // data grid
+    protected $dtActions = [
+        //['label', 'icon', 'url', 'class']
+        ["View", "fa fa-eye", "", "btn-view"],
+        ["Edit", "fa fa-edit", "", "btn-edit"],
+        ["Delete", "fa fa-trash", "", "btn-delete"]
+    ];
+
     /**
      * BaseController constructor.
      * @internal param $formRequest

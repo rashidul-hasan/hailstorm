@@ -18,4 +18,9 @@ class Constants
     const TYPE_SELECT_DB = 'select_db';
     const TYPE_CHECKBOX = 'checkbox';
     const TYPE_RADIO = 'radio';
+
+    // datatable actions
+    const DATATABLE_ACTION_VIEW = 'DATATABLE_ACTION_VIEW';
+    const DATATABLE_ACTION_EDIT = 'DATATABLE_ACTION_EDIT';
+    const DATATABLE_ACTION_DELETE = 'DATATABLE_ACTION_DELETE';
 }

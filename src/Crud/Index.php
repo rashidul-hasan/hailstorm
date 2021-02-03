@@ -49,6 +49,7 @@ trait Index
             'dataRoute' => $this->getRoute('index'),
             'routePrefix' => $this->routePrefix,
             'entityName' => Str::singular($this->getEntityName()),
+            'dtActions' => $this->dtActions,
         ];
 
         if ($this->crudType === Constants::CRUDTYPE_MODAL) {
@@ -58,6 +59,7 @@ trait Index
             $this->viewData['form'] = $form;
             $this->viewData['view'] = 'hailstorm::crud-modal.index';
             $this->viewData['indexFields'] = $fieldsCollection->getIndexFields();
+            $this->viewData['formFields'] = $fieldsCollection->getFormFields();
         }
         $this->callHookMethod('indexing');
 
