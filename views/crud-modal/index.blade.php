@@ -194,6 +194,24 @@
                 }
             }
 
+            function resetForm() {
+                for (const [key, value] of Object.entries(formFields)) {
+                    if(value.type === 'text' || value.type === 'email' || value.type === 'number') {
+                        $(`input[name=${key}]`).val('');
+                    }
+                    if(value.type === 'select' || value.type === 'select_db') {
+                        $(`select[name=${key}]`).val('--Select One--');
+                    }
+                    if(value.type === 'checkbox') {
+                        $(`input[name=${key}]`).attr("checked", false);
+                    }
+                    if(value.type === 'radio') {
+                        $(`input[name=${key}]`).attr("checked", false);
+                    }
+
+                }
+            }
+
             // data table
             var dtable = $('#dtable').DataTable({
                 processing: true,
@@ -230,7 +248,7 @@
                 $("#head_text").html(`Add ${entityName}`);
                 form.attr("action", storeRoute);
                 form.attr("method", "POST");
-                form.trigger("reset");
+                resetForm();
                 modal.modal();
             });
 
