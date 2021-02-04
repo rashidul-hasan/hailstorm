@@ -104,7 +104,8 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-info" data-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-success btn-save">Save</button>
+                        <button type="submit" class="btn btn-success btn-save" value="save">Save</button>
+                        <button type="submit" class="btn btn-success btn-save" value="save-another">Save & Add Another</button>
                     </div>
                 </form>
             </div>
@@ -126,7 +127,8 @@
             //selectors
             var form = $("#form-create");
             var modal = $("#modal-create");
-            var btnSave = $("#modal-create .btn-save");
+            var btnSave = $("#modal-create .btn-save[value=save]");
+            var btnSaveAnother = $("#modal-create .btn-save[value=save-another]");
 
             // utils
             function loading(selector, isLoading, label = "") {
@@ -235,7 +237,7 @@
                         searchable: false,
                         sortable: false,
                         defaultContent:
-                            "@foreach($dtActions as $action)<button class='btn btn-primary btn-sm {{$action[3]}}'><i class='{{$action[1]}}''></i> @endforeach"
+                            "@foreach($dtActions as $action)<button title='{{$action[0]}}' class='{{$action[3]}}'><i class='{{$action[1]}}''></i> @endforeach"
                     },
                     @endif
                 ]
@@ -245,6 +247,7 @@
             $("#btn-create").on("click", function (e) {
                 e.preventDefault();
                 remove_alert();
+                btnSaveAnother.show();
                 $("#head_text").html(`Add ${entityName}`);
                 form.attr("action", storeRoute);
                 form.attr("method", "POST");
@@ -253,10 +256,11 @@
             });
 
 
-            //insert data
-            form.on("click", ".btn-save", function (e) {
-                e.preventDefault();
-                loading(btnSave, true);
+            function onClickSaveButton(btn) {
+                var btnObj = btn === 'save' ? btnSave : btnSaveAnother;
+                var btnText = btn === 'save' ? "Save" : "Save & Add Another";
+
+                loading(btnObj, true);
                 remove_alert();
                 $(".print-error-msg").css('display','none');
                 var action = form.attr("action");
@@ -271,28 +275,36 @@
                     contentType: false,
                     processData: false
                 })
-                    .done(data => {
-                        if(data.success){
-                            dtable.ajax.reload();
-                            form.trigger("reset");
-                            modal.modal('hide');
+                .done(data => {
+                    if(data.success){
+                        dtable.ajax.reload();
+                        form.trigger("reset");
+                        if(btn === 'save') {
                             showSnackbar(data.data.message, true);
-                            loading(btnSave, false, "Save");
-                        } else {
-                            show_alert("Something went wrong!", false);
-                            loading(btnSave, false, "Save");
+                            modal.modal('hide');
                         }
-                    })
-                    .fail(function(xhr) {
-                        //button.html("Save").attr("disabled", false);
-                        if(xhr.status == 422){
-                            printErrorMsg(xhr.responseJSON.errors);
-                            loading(btnSave, false, "Save");
-                        } else {
-                            show_alert("Something went wrong!", false);
-                            loading(btnSave, false, "Save");
-                        }
-                    });
+                        show_alert(data.data.message);
+                        loading(btnObj, false, btnText);
+                    } else {
+                        show_alert("Something went wrong!", false);
+                        loading(btnObj, false, btnText);
+                    }
+                })
+                .fail(function(xhr) {
+                    if(xhr.status == 422){
+                        printErrorMsg(xhr.responseJSON.errors);
+                        loading(btnObj, false, btnText);
+                    } else {
+                        show_alert("Something went wrong!", false);
+                        loading(btnObj, false, btnText);
+                    }
+                });
+            }
+
+            //insert data
+            form.on("click", ".btn-save", function (e) {
+                e.preventDefault();
+                onClickSaveButton($(this).val());
             });
 
             //open Edit modal
@@ -300,6 +312,7 @@
                 e.preventDefault();
                 var data = dtable.row($(this).closest('tr')).data();
                 remove_alert();
+                btnSaveAnother.hide();
                 $("#head_text").html(`Edit ${entityName}`);
                 setValueOnEditForm(data);
                 form.attr("action", updateRoute.replace('xXx', data.id));
@@ -308,29 +321,25 @@
             });
 
             //delete data
-            dtable.on('click', '.dt-btn-delete', function(e) {
+            dtable.on('click', '.btn-delete', function(e) {
                 e.preventDefault();
                 var data = dtable.row($(this).closest('tr')).data();
                 if (confirm("Delete this item?")) {
                     $.ajax({
-                        url: route('expenses.destroy', data.id) ,
+                        url: updateRoute.replace('xXx', data.id) ,
                         method: "DELETE",
-                        data:{"_token":"{{csrf_token()}}"}
+                        data:{"_token": $('input[name=_token]').val()}
                     })
                         .done(function(data) {
                             if(data.success){
                                 dtable.ajax.reload();
-                                toastr.success(data.message, '');
+                                showSnackbar(data.data.message, true);
                             } else {
-                                toastr.error("Something went wrong!", 'Error');
+                                showSnackbar("Something went wrong!", false);
                             }
                         })
                         .fail(function(xhr) {
-                            if(xhr.status == 422){
-                                alert("Validation error");
-                            } else {
-                                toastr.error("Something went wrong!", 'Error');
-                            }
+                            showSnackbar("Something went wrong!", false);
                         });
                 }
 

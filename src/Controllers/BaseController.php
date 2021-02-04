@@ -62,9 +62,9 @@ abstract class BaseController extends Controller
     // data grid
     protected $dtActions = [
         //['label', 'icon', 'url', 'class']
-        ["View", "fa fa-eye", "", "btn-view"],
-        ["Edit", "fa fa-edit", "", "btn-edit"],
-        ["Delete", "fa fa-trash", "", "btn-delete"]
+        ["View", "fa fa-eye", "", "btn btn-sm btn-secondary btn-view"],
+        ["Edit", "fa fa-edit", "", "btn btn-sm btn-secondary btn-edit"],
+        ["Delete", "fa fa-trash", "", "btn btn-sm btn-danger btn-delete"]
     ];
 
     /**
