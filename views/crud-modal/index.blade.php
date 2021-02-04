@@ -220,7 +220,7 @@
 
             // data table
             var op = {};
-            if (getDtOptions && typeof getDtOptions === "function") {
+            if (typeof getDtOptions === "function") {
                 op = getDtOptions();
             }
 
