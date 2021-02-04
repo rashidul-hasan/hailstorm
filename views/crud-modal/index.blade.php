@@ -330,17 +330,17 @@
                         method: "DELETE",
                         data:{"_token": $('input[name=_token]').val()}
                     })
-                        .done(function(data) {
-                            if(data.success){
-                                dtable.ajax.reload();
-                                showSnackbar(data.data.message, true);
-                            } else {
-                                showSnackbar("Something went wrong!", false);
-                            }
-                        })
-                        .fail(function(xhr) {
+                    .done(function(data) {
+                        if(data.success){
+                            dtable.ajax.reload();
+                            showSnackbar(data.data.message, true);
+                        } else {
                             showSnackbar("Something went wrong!", false);
-                        });
+                        }
+                    })
+                    .fail(function(xhr) {
+                        showSnackbar("Something went wrong!", false);
+                    });
                 }
 
             });
