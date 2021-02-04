@@ -115,6 +115,10 @@
     <div id="snackbar"></div>
 @stop
 
+@if($includeView !== null)
+    @includeIf($includeView)
+@endif
+
 @push('scripts')
     <script type="text/javascript">
         $(function () {
@@ -215,7 +219,12 @@
             }
 
             // data table
-            var dtable = $('#dtable').DataTable({
+            var op = {};
+            if (getDtOptions && typeof getDtOptions === "function") {
+                op = getDtOptions();
+            }
+
+            var dtOptions = {
                 processing: true,
                 serverSide: true,
                 searching: true,
@@ -241,7 +250,9 @@
                     },
                     @endif
                 ]
-            });
+            };
+            var finalOptions = $.extend({}, dtOptions, op);
+            var dtable = $('#dtable').DataTable(finalOptions);
 
             // open account create modal
             $("#btn-create").on("click", function (e) {

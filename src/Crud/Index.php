@@ -50,6 +50,7 @@ trait Index
             'routePrefix' => $this->routePrefix,
             'entityName' => Str::singular($this->getEntityName()),
             'dtActions' => $this->dtActions,
+            'includeView' => $this->includeView['index'] ?? null,
         ];
 
         if ($this->crudType === Constants::CRUDTYPE_MODAL) {

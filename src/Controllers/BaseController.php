@@ -1,11 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: rashed
- * Date: 21-Jun-17
- * Time: 4:27 PM
- */
-
 namespace Rashidul\Hailstorm\Controllers;
 
 use Illuminate\Container\Container;
@@ -51,6 +44,9 @@ abstract class BaseController extends Controller
     protected $createView = 'hailstorm::crud.form';
     protected $detailsView = 'hailstorm::crud.table';
     protected $editView = 'hailstorm::crud.form';
+
+    // include extra view to crud [index, create, edit]
+    protected $includeView = [];
 
     // class to handle crud actions
     protected $crudAction;
