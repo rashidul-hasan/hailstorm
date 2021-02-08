@@ -34,8 +34,7 @@ trait Index
 
         $this->crudAction->failIfNotPermitted('index');
 
-        $table = DataTable::of(new $this->modelClass)
-            ->setUrl($this->model->getDataUrl());
+        $fieldsCollection = new FieldsCollection($this->fields);
 
         // action buttons
         $buttons = $this->crudAction->renderIndexActions();
@@ -43,7 +42,6 @@ trait Index
         $this->viewData = [
             'title' => $this->model->getEntityNamePlural(),
             'model' => $this->model,
-            'table' => $table,
             'buttons' => $buttons,
             'view' => $this->indexView,
             'dataRoute' => $this->getRoute('index'),
@@ -51,15 +49,22 @@ trait Index
             'entityName' => Str::singular($this->getEntityName()),
             'dtActions' => $this->dtActions,
             'includeView' => $this->includeView['index'] ?? null,
+            'indexFields' => $fieldsCollection->getIndexFields()
         ];
 
         if ($this->crudType === Constants::CRUDTYPE_MODAL) {
-            $fieldsCollection = new FieldsCollection($this->fields);
             $form = FormBuilder::build($fieldsCollection->getFormFields());
             $this->viewData['title'] = Str::plural($this->getEntityName());
             $this->viewData['form'] = $form;
             $this->viewData['view'] = 'hailstorm::crud-modal.index';
-            $this->viewData['indexFields'] = $fieldsCollection->getIndexFields();
+            $this->viewData['formFields'] = $fieldsCollection->getFormFields();
+        }
+
+        if ($this->crudType === Constants::CRUDTYPE_SINGLEPAGE) {
+            $form = FormBuilder::build($fieldsCollection->getFormFields());
+            $this->viewData['title'] = Str::plural($this->getEntityName());
+            $this->viewData['form'] = $form;
+            $this->viewData['view'] = 'hailstorm::crud-singlepage.index';
             $this->viewData['formFields'] = $fieldsCollection->getFormFields();
         }
         $this->callHookMethod('indexing');
