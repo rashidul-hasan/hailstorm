@@ -95,6 +95,9 @@
                             @foreach($indexFields as $fieldName => $options)
                                 <th>{{$options['label']}}</th>
                             @endforeach
+                            @if(count($dtActions))
+                                <th></th>
+                            @endif
                         </tr>
                         </thead>
                     </table>
@@ -110,6 +113,7 @@
 @endif
 
 @push('scripts')
+    @include('hailstorm::scripts.crud-utils')
     @include('hailstorm::crud-singlepage.datatable-celledit')
     <script type="text/javascript">
         $(function () {
@@ -118,95 +122,13 @@
             var updateRoute = '{{ route("{$routePrefix}.update", "xXx") }}';
             var entityName = '{{ $entityName}}';
             var formFields = @json($formFields, JSON_PRETTY_PRINT);
+            var indexFields = @json($indexFields, JSON_PRETTY_PRINT);
 
             //selectors
             var form = $("#form-create");
             var btnSave = $(".btn-save");
+            var btnSaveText = "Add {{$entityName}}";
             var btnSaveAnother = $("#modal-create .btn-save[value=save-another]");
-
-            // utils
-            function loading(selector, isLoading, label = "") {
-                //selector can be jq selector string or a jq object
-                var selectorObj;
-                if (typeof selector === 'string' || selector instanceof String) {
-                    selectorObj = $(selector);
-                } else if (selector instanceof jQuery) {
-                    selectorObj = selector;
-                }
-                if(isLoading) {
-                    selectorObj.html("<div class='loader'></div>").attr('disabled', true);
-                } else {
-                    selectorObj.html(label).attr('disabled', false);
-                }
-            }
-
-            function show_alert(msg, isSuccess = true) {
-                if(isSuccess) {
-                    $(".alert-wrap").html('<div class="alert alert-success">'+ msg+'</div>')
-                } else {
-                    $(".alert-wrap").html('<div class="alert alert-danger">'+ msg+'</div>')
-                }
-            }
-
-            function remove_alert() {
-                $(".alert-wrap").html('');
-            }
-
-            function printErrorMsg (msg) {
-                var html = '';
-                $.each( msg, function( key, value ) {
-                    html += '<li>'+value+'</li>';
-                });
-                show_alert(html, false);
-            }
-
-            function showSnackbar(msg, isSuccess) {
-                var x = document.getElementById("snackbar");
-                x.style.backgroundColor = isSuccess ? '#0c0' : '#c00';
-                x.innerText = msg;
-                x.className = "show";
-                setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
-            }
-
-            function setValueOnEditForm(data) {
-                for (const [key, value] of Object.entries(formFields)) {
-                    if(value.type === 'text' || value.type === 'email' || value.type === 'number') {
-                        $(`input[name=${key}]`).val(data[key]);
-                    }
-                    if(value.type === 'select' || value.type === 'select_db') {
-                        $(`select[name=${key}]`).val(data[key]);
-                    }
-                    if(value.type === 'checkbox') {
-                        if(data[key]) {
-                            $(`input[name=${key}]`).attr("checked", true);
-                        } else {
-                            $(`input[name=${key}]`).attr("checked", false);
-                        }
-                    }
-                    if(value.type === 'radio') {
-                        $(`input[name=${key}][value=${data[key]}]`).attr("checked", true);
-                    }
-
-                }
-            }
-
-            function resetForm() {
-                for (const [key, value] of Object.entries(formFields)) {
-                    if(value.type === 'text' || value.type === 'email' || value.type === 'number') {
-                        $(`input[name=${key}]`).val('');
-                    }
-                    if(value.type === 'select' || value.type === 'select_db') {
-                        $(`select[name=${key}]`).val('--Select One--');
-                    }
-                    if(value.type === 'checkbox') {
-                        $(`input[name=${key}]`).attr("checked", false);
-                    }
-                    if(value.type === 'radio') {
-                        $(`input[name=${key}]`).attr("checked", false);
-                    }
-
-                }
-            }
 
             // data table
             var op = {};
@@ -229,15 +151,68 @@
                     @foreach($indexFields as $fieldName => $options)
                     {data: '{{$fieldName}}', name: '{{$fieldName}}'},
                     @endforeach
+                    //action column
+                    @if(count($dtActions))
+                    {
+                        data: null,
+                        searchable: false,
+                        sortable: false,
+                        defaultContent:
+                            "@foreach($dtActions as $action)<button title='{{$action[0]}}' class='{{$action[3]}}'><i class='{{$action[1]}}''></i> @endforeach"
+                    },
+                    @endif
                 ]
             };
             var finalOptions = $.extend({}, dtOptions, op);
             var dtable = $('#dtable').DataTable(finalOptions);
 
+            function getCellEditConfigs() {
+                let config = [];
+                let count = 0;
+                for (const [key, value] of Object.entries(indexFields)) {
+                    if(value.type === 'text' || value.type === 'email' || value.type === 'number') {
+                        config.push({
+                            "column": count,
+                            "type": "text",
+                        });
+                    }
+                    if(value.type === 'select') {
+                        let options = [];
+                        if(value.options) {
+                            for(const [i, v] of Object.entries(value.options)) {
+                                options.push({
+                                    value: i,
+                                    display: v
+                                });
+                            }
+                        }
+                        config.push({
+                            "column": count,
+                            "type": "list",
+                            "options": options
+                        });
+                    }
+                    //TODO support select_db, checkbox, radio etc
+                    /*if(value.type === 'checkbox') {
+                        if(data[key]) {
+                            $(`input[name=${key}]`).attr("checked", true);
+                        } else {
+                            $(`input[name=${key}]`).attr("checked", false);
+                        }
+                    }
+                    if(value.type === 'radio') {
+                        $(`input[name=${key}][value=${data[key]}]`).attr("checked", true);
+                    }*/
+                    count++;
+                }
+
+                return config;
+            }
+
             dtable.MakeCellsEditable({
                 "onUpdate": myCallbackFunction,
                 "inputCss":'form-control',
-                "columns": [0, 1],
+                "columns": [@foreach($indexFields as $fieldName => $options) {{$loop->index}},@endforeach],
                 /*"allowNulls": {
                     "columns": [3],
                     "errorClass": 'error'
@@ -246,56 +221,39 @@
                     "confirmCss": 'btn btn-primary btn-sm',
                     "cancelCss": 'btn btn-link'
                 },
-                "inputTypes": [
-                    {
-                        "column": 0,
-                        "type": "text",
-                        "options": null
-                    },
-                    {
-                        "column":1,
-                        "type": "list",
-                        "inputCss": "form-control",
-                        "options":[
-                            { "value": "1", "display": "Beaty" },
-                            { "value": "2", "display": "Doe" },
-                            { "value": "3", "display": "Dirt" }
-                        ]
-                    }
-
-                    // Nothing specified for column 3 so it will default to text
-
-                ]
+                "inputTypes": getCellEditConfigs()
             });
 
             function myCallbackFunction (updatedCell, updatedRow, oldValue) {
                 var data = updatedRow.data();
-                console.log(data);
+                var route = updateRoute.replace('xXx', data.id);
+                data._method = 'PUT';
+                data._token = $('input[name=_token]').val();
                 $.ajax({
-                    url: '/admin/expenses-cat/' + data.id,
-                    method: "PUT",
+                    url: route,
+                    method: "POST",
                     data: data
                 })
-                    .done(function(data) {
-                        if(data.success){
-                            toastr.success(data.message, '');
-                        } else {
-                            toastr.error("Something went wrong!", 'Error');
-                        }
-                    })
-                    .fail(function(xhr) {
-                        if(xhr.status == 422){
-                            alert("Validation error");
-                        } else {
-                            toastr.error("Something went wrong!", 'Error');
-                        }
-                    });
+                .done(function(data) {
+                    if(data.success){
+                        showSnackbar(data.data.message, true);
+                    } else {
+                        showSnackbar("Something went wrong!", false);
+                    }
+                })
+                .fail(function(xhr) {
+                    if(xhr.status == 422){
+                        alert("Validation error");
+                    } else {
+                        showSnackbar("Something went wrong!", false);
+                    }
+                });
 
             }
 
             function onClickSaveButton(btn) {
                 var btnObj = btnSave;
-                var btnText = "Save";
+                var btnText = btnSaveText;
 
                 loading(btnObj, true);
                 remove_alert();
@@ -336,19 +294,6 @@
             form.on("click", ".btn-save", function (e) {
                 e.preventDefault();
                 onClickSaveButton($(this).val());
-            });
-
-            //open Edit modal
-            dtable.on('click','.btn-edit', function (e) {
-                e.preventDefault();
-                var data = dtable.row($(this).closest('tr')).data();
-                remove_alert();
-                btnSaveAnother.hide();
-                $("#head_text").html(`Edit ${entityName}`);
-                setValueOnEditForm(data);
-                form.attr("action", updateRoute.replace('xXx', data.id));
-                form.attr("method", "PUT");
-                modal.modal();
             });
 
             //delete data

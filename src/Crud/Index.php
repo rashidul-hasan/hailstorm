@@ -66,6 +66,9 @@ trait Index
             $this->viewData['form'] = $form;
             $this->viewData['view'] = 'hailstorm::crud-singlepage.index';
             $this->viewData['formFields'] = $fieldsCollection->getFormFields();
+            $this->viewData['dtActions'] = [
+                ["Delete", "fa fa-trash", "", "btn btn-sm btn-danger btn-delete"]
+            ]; // for single page, edit will be done inline
         }
         $this->callHookMethod('indexing');
 
